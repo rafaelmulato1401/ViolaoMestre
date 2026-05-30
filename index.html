@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ViolãoMestre">
+<meta name="application-name" content="ViolãoMestre">
+<meta name="theme-color" content="#0d0a07" id="themeColorMeta">
+<meta name="description" content="Aprenda violão do zero com afinador, acordes interativos e modo Guitar Hero. Desenvolvido por Rafael Mulato.">
+<meta name="keywords" content="violão, guitarra, aprender, acordes, afinador, cifra, Guitar Hero, música">
+<meta name="author" content="Rafael Mulato">
+<!-- Open Graph -->
+<meta property="og:title" content="ViolãoMestre">
+<meta property="og:description" content="Aprenda violão do zero com afinador, acordes e modo Guitar Hero.">
+<meta property="og:type" content="website">
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<!-- Apple touch icons -->
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<title>ViolãoMestre</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0a07;
+    --surface: #141009;
+    --panel: #1c1610;
+    --accent: #c8973a;
+    --accent2: #e8c47a;
+    --gold: #f0d080;
+    --text: #e8dcc8;
+    --muted: #7a6a50;
+    --string: #c8973a;
+    --fret: #3a2e1e;
+    --wood: #2a1e0f;
+    --green: #4caf82;
+    --red: #e05050;
+    --radius: 12px;
+    --shadow: rgba(0,0,0,0.35);
+    --border: rgba(200,151,58,0.15);
+    --border-strong: rgba(200,151,58,0.3);
+    --canvas-bg: #0d0a07;
+  }
+
+  :root.light {
+    --bg: #f5f0e8;
+    --surface: #ede6d6;
+    --panel: #e4d9c0;
+    --accent: #a06820;
+    --accent2: #7a4e10;
+    --gold: #8a5e18;
+    --text: #2a1e08;
+    --muted: #8a7050;
+    --string: #a06820;
+    --fret: #c8b890;
+    --wood: #d4c098;
+    --green: #2e7d52;
+    --red: #c03030;
+    --shadow: rgba(0,0,0,0.12);
+    --border: rgba(120,80,20,0.18);
+    --border-strong: rgba(120,80,20,0.38);
+    --canvas-bg: #ddd5b8;
+  }
+
+  *, *::before { transition: background-color 0.35s ease, border-color 0.35s ease, color 0.25s ease; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(160,104,32,0.05) 0%, transparent 100%);
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: var(--accent);
+  }
+
+  .logo span { color: var(--text); }
+
+  .mic-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    transition: all 0.3s;
+  }
+
+  .mic-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .mic-btn.active {
+    background: rgba(200,151,58,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+    animation: pulse-btn 2s infinite;
+  }
+
+  @keyframes pulse-btn {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(200,151,58,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(200,151,58,0); }
+  }
+
+  .mic-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+
+  .mic-btn.active .mic-dot { background: var(--accent); }
+
+  /* Theme toggle */
+  .header-controls { display: flex; align-items: center; gap: 12px; }
+
+  .theme-btn {
+    width: 44px; height: 24px;
+    border-radius: 50px;
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.35s;
+    flex-shrink: 0;
+  }
+
+  .theme-btn::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1), background 0.35s;
+  }
+
+  :root.light .theme-btn::after { transform: translateX(20px); }
+
+  .theme-icon {
+    font-size: 13px;
+    line-height: 1;
+    user-select: none;
+  }
+
+  /* Layout */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    gap: 0;
+    height: calc(100vh - 73px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 0;
+    background: var(--bg);
+  }
+
+  .sidebar-section { margin-bottom: 8px; }
+
+  .sidebar-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 0 20px 12px;
+  }
+
+  .lesson-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+
+  .lesson-item:hover { background: rgba(160,104,32,0.06); border-left-color: var(--border-strong); }
+  .lesson-item.active { background: rgba(160,104,32,0.12); border-left-color: var(--accent); }
+  .lesson-item.completed .lesson-num { background: var(--green); color: #fff; }
+
+  .lesson-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--fret);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+
+  .lesson-item.active .lesson-num { background: var(--accent); color: var(--bg); }
+
+  .lesson-text { font-size: 14px; line-height: 1.3; }
+  .lesson-label { color: var(--text); }
+  .lesson-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  .divider { height: 1px; background: rgba(200,151,58,0.1); margin: 16px 20px; }
+
+  /* Main area */
+  .main { overflow-y: auto; padding: 32px 40px; }
+
+  .lesson-header { margin-bottom: 32px; }
+
+  .lesson-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .lesson-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .lesson-desc { font-size: 17px; color: var(--muted); line-height: 1.6; max-width: 600px; }
+
+  /* Chord diagram */
+  .chord-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+    margin: 28px 0;
+  }
+
+  .chord-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chord-card.chord-target {
+    border-color: var(--accent) !important;
+    background: rgba(160,104,32,0.1);
+    box-shadow: 0 0 0 3px rgba(160,104,32,0.15), 0 8px 30px var(--shadow);
+  }
+
+  /* Practice badge */
+  .chord-practice-badge {
+    display: none;
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 50px;
+    letter-spacing: 0.5px;
+    z-index: 3;
+    animation: badgeIn 0.3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  .chord-practice-badge.visible { display: block; }
+
+  @keyframes badgeIn {
+    from { opacity: 0; transform: scale(0.6) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Check overlay */
+  .chord-check-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(46,125,82,0.88);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    backdrop-filter: blur(2px);
+  }
+
+  .chord-check-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+    animation: overlayIn 0.4s cubic-bezier(.34,1.2,.64,1) both;
+  }
+
+  @keyframes overlayIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .chord-check-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+  }
+
+  .chord-check-circle svg { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
+
+  .check-ring {
+    stroke-dasharray: 138;
+    stroke-dashoffset: 138;
+    animation: drawRing 0.5s ease forwards;
+  }
+
+  @keyframes drawRing {
+    to { stroke-dashoffset: 0; }
+  }
+
+  .check-mark {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: drawCheck 0.4s 0.35s ease forwards;
+  }
+
+  @keyframes drawCheck {
+    to { stroke-dashoffset: 0; }
+  }
+
+  .chord-check-circle span {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    animation: fadeIn 0.4s 0.5s ease both;
+  }
+
+  /* Success pulse on card */
+  @keyframes successPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(76,175,130,0.6); }
+    70%  { box-shadow: 0 0 0 16px rgba(76,175,130,0); }
+    100% { box-shadow: 0 0 0 0 rgba(76,175,130,0); }
+  }
+
+  .chord-card.chord-success-pulse { animation: successPulse 0.8s ease; }
+
+  /* Hint to click in chord lessons */
+  .chord-practice-hint {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(160,104,32,0.08);
+    border: 1px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .chord-practice-hint strong { color: var(--accent); font-family: 'DM Mono', monospace; font-size: 13px; }
+
+  .chord-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow); }
+  .chord-card.detected { border-color: var(--green); background: rgba(46,125,82,0.08); }
+  .chord-card.detected::after { content: '✓ detectado'; position: absolute; top: 10px; right: 12px; font-size: 9px; color: var(--green); font-family: 'DM Mono', monospace; }
+
+  .chord-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .chord-info { flex: 1; }
+
+  .chord-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--accent2);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .chord-label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+
+  .chord-fingers-legend { display: flex; flex-direction: column; gap: 4px; }
+
+  .finger-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .finger-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #0d0a07;
+    flex-shrink: 0;
+  }
+
+  .finger-1 { background: #e87070; }
+  .finger-2 { background: #e8a840; }
+  .finger-3 { background: #70b8e8; }
+  .finger-4 { background: #80d880; }
+
+  .chord-hand-wrap {
+    margin-top: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  .chord-hand-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* SVG chord diagram */
+  .chord-svg { display: block; flex-shrink: 0; }
+  .chord-hand-svg { display: block; width: 100%; }
+
+  /* Fretboard */
+  .fretboard-wrap {
+    background: var(--wood);
+    border: 1px solid rgba(200,151,58,0.2);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+
+  .fretboard-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* Steps */
+  .steps { margin: 24px 0; }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(200,151,58,0.08);
+    animation: fadeIn 0.4s ease both;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--fret);
+    border: 1px solid rgba(200,151,58,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-content h4 { font-size: 17px; margin-bottom: 6px; color: var(--accent2); }
+  .step-content p { font-size: 15px; color: var(--muted); line-height: 1.6; }
+  .step-content em { color: var(--accent); font-style: normal; font-family: 'DM Mono', monospace; font-size: 13px; }
+
+  /* Audio visualizer */
+  .viz-panel {
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 24px 0;
+  }
+
+  .viz-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .viz-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+
+  .note-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--accent);
+  }
+
+  canvas#vizCanvas {
+    width: 100%;
+    height: 80px;
+    border-radius: 8px;
+    background: var(--canvas-bg);
+    display: block;
+  }
+
+  /* Tuner */
+  .tuner {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 24px 0;
+  }
+
+  .tuner-strings { display: flex; gap: 10px; }
+
+  .string-btn {
+    flex: 1;
+    padding: 10px 4px;
+    background: var(--fret);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .string-btn:hover { border-color: var(--accent); }
+  .string-btn.in-tune { border-color: var(--green); background: rgba(76,175,130,0.1); }
+
+  .string-note { font-size: 18px; font-weight: 500; color: var(--accent2); }
+  .string-num { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Pitch meter */
+  .pitch-meter {
+    margin-top: 16px;
+    background: var(--bg);
+    border-radius: 8px;
+    height: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pitch-bar {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 4px;
+    background: var(--accent);
+    left: 50%;
+    transform: translateX(-50%);
+    transition: left 0.1s;
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .pitch-center { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: rgba(200,151,58,0.2); }
+
+  .pitch-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center; }
+
+  /* Right panel */
+  .right-panel {
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px;
+    background: var(--bg);
+  }
+
+  .panel-block { margin-bottom: 28px; }
+  .panel-block-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Progress */
+  .progress-ring-wrap { text-align: center; margin-bottom: 16px; }
+
+  .progress-bar {
+    background: var(--fret);
+    border-radius: 50px;
+    height: 6px;
+    margin: 8px 0;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 50px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* Song search */
+  .song-search {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Crimson Pro', serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 12px;
+  }
+
+  .song-search:focus { border-color: var(--accent); }
+  .song-search::placeholder { color: var(--muted); }
+
+  .song-item {
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+
+  .song-item:hover { background: rgba(160,104,32,0.07); border-color: var(--border); }
+
+  .song-name { font-size: 14px; color: var(--text); }
+  .song-meta { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+  /* Tips */
+  .tip-card {
+    background: rgba(160,104,32,0.07);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .tip-icon { margin-right: 6px; }
+
+  /* Nav buttons */
+  .nav-btns { display: flex; gap: 12px; margin-top: 32px; }
+
+  .btn {
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.25s;
+    border: 1px solid;
+  }
+
+  .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 500; }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+
+  .btn-secondary { background: transparent; color: var(--text); border-color: var(--border-strong); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    opacity: 0;
+    transition: all 0.4s;
+    z-index: 999;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(200,151,58,0.2); border-radius: 2px; }
+
+  .hidden { display: none !important; }
+
+  /* ── GUITAR HERO ─────────────────────────────────────── */
+  .gh-setup {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .gh-url-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .gh-url-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .gh-url-input:focus { border-color: var(--accent); }
+  .gh-url-input::placeholder { color: var(--muted); }
+
+  .gh-load-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .gh-load-btn:hover { background: var(--accent2); }
+  .gh-load-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .gh-bpm-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .gh-bpm-row label {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .gh-bpm-input {
+    width: 70px;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    text-align: center;
+    outline: none;
+  }
+
+  .gh-beats-input {
+    width: 50px;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    text-align: center;
+    outline: none;
+  }
+
+  /* Song info bar */
+  .gh-song-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: rgba(160,104,32,0.1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+  }
+
+  .gh-song-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); }
+  .gh-song-artist { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  .gh-controls { display: flex; gap: 10px; align-items: center; }
+
+  .gh-play-btn {
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .gh-play-btn:hover { opacity: 0.85; }
+  .gh-play-btn.stop { background: var(--red); }
+
+  .gh-score-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    text-align: right;
+    min-width: 100px;
+  }
+
+  .gh-score-val { font-size: 22px; font-weight: 700; display: block; }
+  .gh-combo-val { font-size: 11px; color: var(--muted); }
+
+  /* Stage */
+  .gh-stage-wrap {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #050303;
+    margin-bottom: 16px;
+  }
+
+  canvas#ghCanvas { display: block; width: 100%; }
+
+  /* Chord queue preview */
+  .gh-queue {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 0 4px;
+    margin-bottom: 16px;
+  }
+
+  .gh-queue-chip {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .gh-queue-chip.next { border-color: var(--accent); color: var(--accent); background: rgba(160,104,32,0.12); font-weight: 600; }
+  .gh-queue-chip.done { opacity: 0.35; text-decoration: line-through; }
+
+  /* Hit feedback */
+  .gh-feedback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%) scale(0.5);
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 900;
+    pointer-events: none;
+    opacity: 0;
+    transition: none;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    z-index: 20;
+  }
+
+  .gh-feedback.show {
+    animation: feedbackPop 0.7s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+
+  @keyframes feedbackPop {
+    0%   { opacity: 1; transform: translate(-50%,-50%) scale(0.6); }
+    40%  { opacity: 1; transform: translate(-50%,-60%) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%,-80%) scale(0.9); }
+  }
+
+  /* Countdown */
+  .gh-countdown {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 96px;
+    font-weight: 900;
+    color: var(--accent);
+    background: rgba(5,3,3,0.7);
+    z-index: 30;
+    text-shadow: 0 0 40px rgba(200,151,58,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .gh-countdown.show { opacity: 1; pointer-events: auto; }
+
+  .gh-chord-list-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .gh-chord-tag {
+    background: var(--fret);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  .gh-result-panel {
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .gh-result-panel h2 { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--accent2); margin-bottom: 8px; }
+  .gh-result-panel .big-score { font-size: 64px; font-family: 'DM Mono', monospace; color: var(--accent); font-weight: 700; line-height: 1; margin: 16px 0; }
+  .gh-result-panel p { color: var(--muted); font-size: 15px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar, .right-panel { display: none; }
+    header { padding: 16px 20px; }
+    .main { padding: 20px; }
+  }
+
+  /* ── MOBILE PWA ───────────────────────────────── */
+  html { height: 100%; }
+
+  .install-banner {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 20px;
+    background: linear-gradient(90deg,rgba(200,151,58,0.18),rgba(200,151,58,0.07));
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text);
+    position: sticky; top: 0; z-index: 300;
+  }
+  .install-banner.show { display: flex; }
+  .install-banner-text { font-family:'DM Mono',monospace; font-size:12px; }
+  .install-banner-text strong { color: var(--accent); }
+  .install-btn { background:var(--accent); color:var(--bg); border:none; border-radius:50px; padding:7px 16px; font-family:'DM Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .install-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px; padding:4px 8px; }
+
+  .offline-badge { display:none; position:fixed; top:12px; right:12px; background:var(--red); color:#fff; font-family:'DM Mono',monospace; font-size:10px; padding:4px 12px; border-radius:50px; z-index:9999; }
+  .offline-badge.show { display:block; }
+
+  /* Splash */
+  #splashScreen { position:fixed; inset:0; background:#0d0a07; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; transition:opacity 0.6s ease; }
+  #splashScreen.fade { opacity:0; pointer-events:none; }
+  .splash-logo { font-family:'Playfair Display',serif; font-size:54px; font-weight:900; color:#c8973a; margin-bottom:6px; animation:fadeIn 0.7s ease both; }
+  .splash-logo span { color:#e8dcc8; }
+  .splash-sub { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:4px; color:#7a6a50; text-transform:uppercase; animation:fadeIn 0.7s 0.2s ease both; }
+  .splash-bar { width:100px; height:2px; background:rgba(200,151,58,0.12); border-radius:2px; margin-top:36px; overflow:hidden; animation:fadeIn 0.5s 0.3s ease both; }
+  .splash-bar-fill { height:100%; background:#c8973a; width:0%; border-radius:2px; animation:loadBar 1.3s 0.4s ease forwards; }
+  @keyframes loadBar { to { width:100%; } }
+  .splash-by { position:absolute; bottom:36px; font-family:'DM Mono',monospace; font-size:10px; color:#4a3a22; letter-spacing:3px; text-transform:uppercase; animation:fadeIn 0.6s 0.5s ease both; }
+
+  /* Credits Footer */
+  .credits-footer { text-align:center; padding:40px 20px 60px; border-top:1px solid var(--border); margin-top:48px; }
+  .credits-divider { width:36px; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); margin:16px auto; border-radius:2px; }
+  .credits-logo { font-family:'Playfair Display',serif; font-size:24px; font-weight:900; color:var(--accent); margin-bottom:4px; }
+  .credits-logo span { color:var(--text); }
+  .credits-by { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+  .credits-name { font-family:'Playfair Display',serif; font-size:20px; color:var(--text); margin-bottom:4px; font-style:italic; }
+  .credits-version { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); opacity:0.5; margin-top:10px; }
+  .credits-links { display:flex; gap:16px; justify-content:center; margin-top:14px; }
+  .credits-link { font-family:'DM Mono',monospace; font-size:11px; color:var(--accent); text-decoration:none; opacity:0.7; transition:opacity 0.2s; }
+  .credits-link:hover { opacity:1; }
+
+  /* Theme toggle label */
+  .theme-toggle-label { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:1px; display:none; }
+  @media (min-width:700px) { .theme-toggle-label { display:inline; } }
+
+  @media (max-width:600px) {
+    .chord-grid { grid-template-columns: 1fr; }
+    .lesson-title { font-size:26px; }
+    .gh-url-row { flex-direction:column; }
+    .gh-bpm-row { flex-wrap:wrap; gap:8px; }
+    .logo { font-size:20px; }
+    .mic-btn { padding:8px 12px; font-size:12px; }
+    #micLabel { display:none; }
+    .header-controls { gap:8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splashScreen">
+  <div class="splash-logo">Violão<span>Mestre</span></div>
+  <div class="splash-sub">Aprenda do zero</div>
+  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  <div class="splash-by">por Rafael Mulato</div>
+</div>
+
+<!-- Offline indicator -->
+<div class="offline-badge" id="offlineBadge">● Sem conexão</div>
+
+<!-- PWA Install Banner -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-text">📱 <strong>ViolãoMestre</strong> pode ser instalado no seu celular!</div>
+  <button class="install-btn" onclick="installPWA()">Instalar App</button>
+  <button class="install-close" onclick="document.getElementById('installBanner').classList.remove('show')">×</button>
+</div>
+
+<header>
+  <div class="logo">Violão<span>Mestre</span></div>
+  <div class="header-controls">
+    <span class="theme-icon" title="Escuro">🌙</span>
+    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema claro/escuro"></button>
+    <span class="theme-icon" title="Claro">☀️</span>
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()" aria-label="Ativar microfone">
+      <span class="mic-dot"></span>
+      <span id="micLabel">Microfone</span>
+    </button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Módulo 1 — Fundamentos</div>
+      <div class="lesson-item active" onclick="goLesson(0)">
+        <div class="lesson-num" id="ln0">1</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Conhecendo o Violão</div>
+          <div class="lesson-sub">Partes & anatomia</div>
+        </div>
+      </div>
+      <div class="lesson-item" onclick="goLesson(1)">
+        <div class="lesson-num" id="ln1">2</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Afinação</div>
+          <div class="lesson-sub">E A D G B E</div>
+        </div>
+      </div>
+      <div class="lesson-item" onclick="goLesson(2)">
+        <div class="lesson-num" id="ln2">3</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Postura & Posição</div>
+          <div class="lesson-sub">Mão direita e esquerda</div>
+        </div>
+      </div>
+      <div class="lesson-item" onclick="goLesson(3)">
+        <div class="lesson-num" id="ln3">4</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Primeiros Acordes</div>
+          <div class="lesson-sub">Em, Am, E, A</div>
+        </div>
+      </div>
+      <div class="lesson-item" onclick="goLesson(4)">
+        <div class="lesson-num" id="ln4">5</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Acordes Maiores</div>
+          <div class="lesson-sub">C, D, G, F</div>
+        </div>
+      </div>
+      <div class="lesson-item" onclick="goLesson(5)">
+        <div class="lesson-num" id="ln5">6</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Ritmo Básico</div>
+          <div class="lesson-sub">Batidas & marcação</div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Módulo 2 — Músicas</div>
+      <div class="lesson-item" onclick="goLesson(6)">
+        <div class="lesson-num" id="ln6">♪</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Escolher Música</div>
+          <div class="lesson-sub">Catálogo com cifras</div>
+        </div>
+      </div>
+      <div class="lesson-item" onclick="goLesson(7)">
+        <div class="lesson-num" id="ln7">🎸</div>
+        <div class="lesson-text">
+          <div class="lesson-label">Guitar Hero</div>
+          <div class="lesson-sub">Toque junto com cifra</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="mainContent">
+    <!-- Content injected by JS -->
+  </main>
+
+  <!-- Right Panel -->
+  <aside class="right-panel">
+    <div class="panel-block">
+      <div class="panel-block-title">Progresso</div>
+      <div class="progress-label"><span>Lição atual</span><span id="progressPct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">Módulo 1 de 2 — Fundamentos</div>
+    </div>
+
+    <div class="panel-block">
+      <div class="panel-block-title">Afinação em Tempo Real</div>
+      <div class="tuner">
+        <div class="tuner-strings">
+          <div class="string-btn" id="str6"><div class="string-note">E</div><div class="string-num">6ª</div></div>
+          <div class="string-btn" id="str5"><div class="string-note">A</div><div class="string-num">5ª</div></div>
+          <div class="string-btn" id="str4"><div class="string-note">D</div><div class="string-num">4ª</div></div>
+          <div class="string-btn" id="str3"><div class="string-note">G</div><div class="string-num">3ª</div></div>
+          <div class="string-btn" id="str2"><div class="string-note">B</div><div class="string-num">2ª</div></div>
+          <div class="string-btn" id="str1"><div class="string-note">E</div><div class="string-num">1ª</div></div>
+        </div>
+        <div class="pitch-meter">
+          <div class="pitch-center"></div>
+          <div class="pitch-bar" id="pitchBar"></div>
+        </div>
+        <div class="pitch-label" id="pitchLabel">— ative o microfone —</div>
+      </div>
+    </div>
+
+    <div class="panel-block">
+      <div class="panel-block-title">Dicas Rápidas</div>
+      <div class="tip-card"><span class="tip-icon">💡</span>Mantenha as unhas da mão esquerda sempre curtas para pressionar as cordas corretamente.</div>
+      <div class="tip-card"><span class="tip-icon">🎵</span>Pratique a troca de acordes lentamente antes de aumentar a velocidade.</div>
+      <div class="tip-card"><span class="tip-icon">⏱️</span>15 minutos diários consistentes valem mais que 2 horas uma vez por semana.</div>
+    </div>
+  </aside>
+</div>
+
+<!-- Credits Footer -->
+<footer class="credits-footer">
+  <div class="credits-logo">Violão<span>Mestre</span></div>
+  <div class="credits-divider"></div>
+  <div class="credits-by">Desenvolvido por</div>
+  <div class="credits-name">Rafael Mulato</div>
+  <div class="credits-divider"></div>
+  <div class="credits-version">v1.0.0 · PWA · 2025</div>
+  <div class="credits-links">
+    <span class="credits-link">🎸 Aprenda violão do zero</span>
+    <span class="credits-link">🎙 Afinador em tempo real</span>
+    <span class="credits-link">🕹 Modo Guitar Hero</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────
+const lessons = [
+  {
+    tag: 'Lição 01 — Fundamentos',
+    title: 'Conhecendo o Violão',
+    desc: 'Antes de tocar, vamos entender o instrumento. Cada parte tem um nome e uma função essencial.',
+    type: 'anatomy',
+    steps: [
+      { title: 'O Corpo', text: 'A caixa de ressonância amplifica o som. O tampo (frente) é geralmente de abeto ou cedro, os fundos e ilhargas de mogno ou jacarandá.' },
+      { title: 'O Braço', text: 'Onde você pressiona as notas. É dividido por <em>trastes</em> — as barras metálicas que determinam as notas.' },
+      { title: 'A Cravelha', text: 'As 6 tarraxas na cabeça do violão são usadas para <em>afinar</em> cada corda. Sentido horário = mais agudo.' },
+      { title: 'O Cavalete', text: 'Preso ao tampo, sustenta as cordas e transmite as vibrações para a caixa. Cuide para não bater nele.' },
+      { title: 'As 6 Cordas', text: 'Da mais grossa (6ª) à mais fina (1ª): <em>Mi, Lá, Ré, Sol, Si, Mi</em>. Memorize: "Elefante Alegre Dorme Gostoso, Bom Entretenimento".' },
+    ]
+  },
+  {
+    tag: 'Lição 02 — Afinação',
+    title: 'Afinando o Violão',
+    desc: 'Um violão desafinado dificulta o aprendizado. Use o afinador integrado abaixo — ative o microfone!',
+    type: 'tuner',
+    steps: [
+      { title: 'Notas de Referência', text: 'Afinação padrão: 6ª=<em>E2 (82Hz)</em>, 5ª=<em>A2 (110Hz)</em>, 4ª=<em>D3 (147Hz)</em>, 3ª=<em>G3 (196Hz)</em>, 2ª=<em>B3 (247Hz)</em>, 1ª=<em>E4 (330Hz)</em>.' },
+      { title: 'Como Afinar', text: 'Toque uma corda, observe o medidor. Se a agulha está à esquerda, <em>aperte</em> (mais agudo). Se está à direita, <em>afrouxe</em> (mais grave).' },
+      { title: 'Dica Prática', text: 'Sempre afine de baixo para cima — chegue à nota vindo do grave. Isso mantém melhor a afinação, pois a tensão da corda se estabiliza.' },
+    ]
+  },
+  {
+    tag: 'Lição 03 — Postura',
+    title: 'Postura & Posição',
+    desc: 'Uma boa postura previne lesões e facilita o aprendizado. Não ignore essa etapa!',
+    type: 'text',
+    steps: [
+      { title: 'Posição Sentada', text: 'Sente-se reto, apoie o violão na perna direita (posição popular) ou na esquerda com ela elevada (posição clássica). O braço deve ficar inclinado levemente.' },
+      { title: 'Mão Esquerda', text: 'O polegar fica <em>atrás do braço</em>, na linha do dedo médio. Os dedos curvos pressionam próximo aos trastes (não sobre eles). Nunca "abrace" o braço.' },
+      { title: 'Mão Direita', text: 'Pulso relaxado, dedos ou palheta próximos ao buraco do violão. Para palheta: segure levemente entre polegar e indicador, com apenas 1cm exposto.' },
+      { title: 'Dedo que Pressiona', text: 'Pressione com a <em>ponta do dedo</em>, não com a polpa. Isso evita abafar cordas adjacentes. Mantenha as unhas da mão esquerda bem curtas!' },
+    ]
+  },
+  {
+    tag: 'Lição 04 — Acordes',
+    title: 'Primeiros Acordes',
+    desc: 'Estes são os acordes mais fáceis do violão — perfeitos para começar. Use o microfone para praticar!',
+    type: 'chords',
+    chords: ['Em', 'Am', 'E', 'A']
+  },
+  {
+    tag: 'Lição 05 — Acordes',
+    title: 'Acordes Maiores',
+    desc: 'Com estes acordes você já consegue tocar centenas de músicas! Pratique a transição entre eles.',
+    type: 'chords',
+    chords: ['C', 'D', 'G', 'F']
+  },
+  {
+    tag: 'Lição 06 — Ritmo',
+    title: 'Ritmo e Batidas',
+    desc: 'Agora que você conhece os acordes, vamos adicionar ritmo. O ritmo é a base de tudo!',
+    type: 'text',
+    steps: [
+      { title: 'Marcação Básica', text: 'Comece batendo <em>para baixo</em> em cada tempo. Em 4/4: 1-2-3-4. Use a palheta ou o polegar, de cima para baixo.' },
+      { title: 'Ritmo Básico (baião)', text: 'Down-Down-Up-Down-Up: <em>↓ ↓ ↑ ↓ ↑</em>. Repita lentamente até o movimento ser natural. Use um metrônomo a 60bpm.' },
+      { title: 'Ritmo de Valsa', text: 'Em 3/4: <em>↓ ↑↑</em>. Três tempos por compasso — perfeito para músicas românticas e boleros.' },
+      { title: 'Dica Essencial', text: 'Não pare quando errar! <em>Mantenha o tempo</em>. Um erro seguido do ritmo certo é melhor do que parar e quebrar a música.' },
+    ]
+  },
+  {
+    tag: 'Módulo 2 — Músicas',
+    title: 'Escolha sua Música',
+    desc: 'Procure uma música para aprender. Mostraremos a cifra e os acordes necessários.',
+    type: 'songs'
+  },
+  {
+    tag: 'Módulo 3 — Guitar Hero',
+    title: '🎸 Modo Guitar Hero',
+    desc: 'Cole o link de uma cifra do CifraClub e toque junto! Os acordes descem pela tela no ritmo — acerte na hora certa e marque pontos.',
+    type: 'guitarhero'
+  }
+];
+
+// chordData: each string entry = [fret(0=open,-1=muted), finger(1-4), stringNum(1-6 low to high)]
+// fingers array indexed 0=low E(6th) to 5=high E(1st)
+// [fret, finger] — 0 fret = open, -1 = muted
+const chordData = {
+  'Em': {
+    label: 'mi menor',
+    frets:   [ 0,  2,  2,  0,  0,  0],
+    fingers: [ 0,  2,  3,  0,  0,  0],
+    hint: 'O mais fácil! Só dois dedos. Médio e anelar na 2ª casa.',
+    legend: [
+      { finger: 2, color: '#e8a840', desc: 'Médio — 5ª corda, 2ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 4ª corda, 2ª casa' },
+    ]
+  },
+  'Am': {
+    label: 'lá menor',
+    frets:   [-1,  0,  2,  2,  1,  0],
+    fingers: [ 0,  0,  2,  3,  1,  0],
+    hint: 'Três dedos em fila na 2ª casa. Não toque a 6ª corda (×).',
+    legend: [
+      { finger: 1, color: '#e87070', desc: 'Indicador — 3ª corda, 1ª casa' },
+      { finger: 2, color: '#e8a840', desc: 'Médio — 4ª corda, 2ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 5ª corda, 2ª casa' },
+    ]
+  },
+  'E': {
+    label: 'mi maior',
+    frets:   [ 0,  2,  2,  1,  0,  0],
+    fingers: [ 0,  3,  2,  1,  0,  0],
+    hint: 'Parecido com Em, mas adicione o indicador na 3ª corda.',
+    legend: [
+      { finger: 1, color: '#e87070', desc: 'Indicador — 3ª corda, 1ª casa' },
+      { finger: 2, color: '#e8a840', desc: 'Médio — 4ª corda, 2ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 5ª corda, 2ª casa' },
+    ]
+  },
+  'A': {
+    label: 'lá maior',
+    frets:   [-1,  0,  2,  2,  2,  0],
+    fingers: [ 0,  0,  1,  2,  3,  0],
+    hint: 'Três dedos enfileirados na 2ª casa. Não toque a 6ª corda.',
+    legend: [
+      { finger: 1, color: '#e87070', desc: 'Indicador — 4ª corda, 2ª casa' },
+      { finger: 2, color: '#e8a840', desc: 'Médio — 3ª corda, 2ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 2ª corda, 2ª casa' },
+    ]
+  },
+  'C': {
+    label: 'dó maior',
+    frets:   [-1,  3,  2,  0,  1,  0],
+    fingers: [ 0,  3,  2,  0,  1,  0],
+    hint: 'Um dos mais usados. O anelar vai bem fundo na 5ª corda.',
+    legend: [
+      { finger: 1, color: '#e87070', desc: 'Indicador — 2ª corda, 1ª casa' },
+      { finger: 2, color: '#e8a840', desc: 'Médio — 4ª corda, 2ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 5ª corda, 3ª casa' },
+    ]
+  },
+  'D': {
+    label: 'ré maior',
+    frets:   [-1, -1,  0,  2,  3,  2],
+    fingers: [ 0,  0,  0,  1,  3,  2],
+    hint: 'Formato triangular na parte superior. Só as 4 cordas mais finas.',
+    legend: [
+      { finger: 1, color: '#e87070', desc: 'Indicador — 3ª corda, 2ª casa' },
+      { finger: 2, color: '#e8a840', desc: 'Médio — 1ª corda, 2ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 2ª corda, 3ª casa' },
+    ]
+  },
+  'G': {
+    label: 'sol maior',
+    frets:   [ 3,  2,  0,  0,  0,  3],
+    fingers: [ 2,  1,  0,  0,  0,  3],
+    hint: 'Bastante usado! Dedos nas extremidades do braço. Toque todas as cordas.',
+    legend: [
+      { finger: 1, color: '#e87070', desc: 'Indicador — 5ª corda, 2ª casa' },
+      { finger: 2, color: '#e8a840', desc: 'Médio — 6ª corda, 3ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 1ª corda, 3ª casa' },
+    ]
+  },
+  'F': {
+    label: 'fá maior',
+    frets:   [ 1,  1,  2,  3,  3,  1],
+    fingers: [ 1,  1,  2,  3,  4,  1],
+    hint: 'O mais desafiador — requer pestana (indicador cobrindo todas as cordas).',
+    legend: [
+      { finger: 1, color: '#e87070', desc: 'Indicador — pestana na 1ª casa (todas)' },
+      { finger: 2, color: '#e8a840', desc: 'Médio — 3ª corda, 2ª casa' },
+      { finger: 3, color: '#70b8e8', desc: 'Anelar — 4ª corda, 3ª casa' },
+      { finger: 4, color: '#80d880', desc: 'Mínimo — 5ª corda, 3ª casa' },
+    ]
+  },
+};
+
+const songs = [
+  { name: 'Wonderwall', artist: 'Oasis', chords: ['Em7','G','Dsus4','A7sus4'], diff: 'Iniciante' },
+  { name: 'Knockin\' on Heaven\'s Door', artist: 'Bob Dylan', chords: ['G','D','Am','C'], diff: 'Iniciante' },
+  { name: 'Let Her Go', artist: 'Passenger', chords: ['G','D','Em','C'], diff: 'Iniciante' },
+  { name: 'Fico Assim Sem Você', artist: 'Claudinho e Buchecha', chords: ['Am','G','F','E'], diff: 'Iniciante' },
+  { name: 'Pais e Filhos', artist: 'Legião Urbana', chords: ['Em','C','G','D'], diff: 'Iniciante' },
+  { name: 'Hotel California', artist: 'Eagles', chords: ['Bm','F#','A','E','G','D','Em'], diff: 'Intermediário' },
+  { name: 'Wish You Were Here', artist: 'Pink Floyd', chords: ['Em','G','Am','C'], diff: 'Iniciante' },
+  { name: 'Garota de Ipanema', artist: 'Tom Jobim', chords: ['F','G7','Gm7','Gb7'], diff: 'Intermediário' },
+  { name: 'Sweet Home Alabama', artist: 'Lynyrd Skynyrd', chords: ['D','C','G'], diff: 'Iniciante' },
+  { name: 'Stand By Me', artist: 'Ben E. King', chords: ['G','Em','C','D'], diff: 'Iniciante' },
+];
+
+// ─── STATE ──────────────────────────────────────────────────────
+let currentLesson = 0;
+let micActive = false;
+let audioCtx, analyser, animFrame;
+let completedLessons = new Set();
+const NOTE_STRINGS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const GUITAR_NOTES = {
+  'E2':82.41,'A2':110,'D3':146.83,'G3':196,'B3':246.94,'E4':329.63
+};
+
+// Chord practice state
+let targetChord = null;       // name of chord user selected to practice
+let chordHitBuffer = [];      // rolling window of recent detections
+let chordChecked = false;     // whether current target already got ✓
+
+// Dominant notes (root + characteristic notes) per chord, used for detection
+// Each entry: array of note names that should be strongly present
+const CHORD_NOTES = {
+  'Em': ['E','G','B'],
+  'Am': ['A','C','E'],
+  'E':  ['E','G#','B'],
+  'A':  ['A','C#','E'],
+  'C':  ['C','E','G'],
+  'D':  ['D','F#','A'],
+  'G':  ['G','B','D'],
+  'F':  ['F','A','C'],
+};
+
+// ─── INIT ───────────────────────────────────────────────────────
+window.onload = () => { goLesson(0); };
+
+function goLesson(idx) {
+  targetChord = null;
+  chordHitBuffer = [];
+  chordChecked = false;
+  currentLesson = idx;
+  document.querySelectorAll('.lesson-item').forEach((el,i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  updateProgress();
+  renderLesson();
+}
+
+function updateProgress() {
+  const pct = Math.round((currentLesson / (lessons.length - 1)) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────
+function renderLesson() {
+  const l = lessons[currentLesson];
+  let html = `
+    <div class="lesson-header">
+      <div class="lesson-tag">${l.tag}</div>
+      <h1 class="lesson-title">${l.title}</h1>
+      <p class="lesson-desc">${l.desc}</p>
+    </div>`;
+
+  if (l.type === 'anatomy' || l.type === 'text' || l.type === 'tuner') {
+    if (l.type === 'tuner') {
+      html += renderVizPanel();
+    }
+    if (l.steps) {
+      html += `<div class="steps">`;
+      l.steps.forEach((s, i) => {
+        html += `
+          <div class="step" style="animation-delay:${i*0.08}s">
+            <div class="step-num">${String(i+1).padStart(2,'0')}</div>
+            <div class="step-content">
+              <h4>${s.title}</h4>
+              <p>${s.text}</p>
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  if (l.type === 'chords') {
+    html += renderVizPanel();
+    html += `
+      <div class="chord-practice-hint">
+        <span style="font-size:22px">👆</span>
+        <div><strong>Clique num acorde</strong> para selecioná-lo como alvo. Toque no violão e quando o app detectar, aparece um ✓ verde. Clique em outro acorde para trocar — o ✓ anterior some.</div>
+      </div>`;
+    html += `<div class="chord-grid" id="chordGrid">`;
+    l.chords.forEach(c => {
+      html += renderChordCard(c);
+    });
+    html += `</div>`;
+    html += `<div class="steps">`;
+    html += `
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <h4>Como praticar</h4>
+          <p>Forme o acorde lentamente, pressione todas as cordas e toque uma a uma para verificar se estão soando. Ative o microfone e toque — vamos detectar o acorde!</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <h4>Troca de acordes</h4>
+          <p>Pratique a transição entre dois acordes de cada vez. Ex: Em → Am. Faça <em>4 tempos</em> em cada acorde, sem parar o ritmo.</p>
+        </div>
+      </div>`;
+    html += `</div>`;
+  }
+
+  if (l.type === 'songs') {
+    html += `
+      <input class="song-search" id="songSearch" placeholder="🔍  Buscar música ou artista..." oninput="filterSongs()" />
+      <div id="songList">`;
+    songs.forEach((s, i) => {
+      html += `
+        <div class="song-item" onclick="selectSong(${i})">
+          <div class="song-name">${s.name}</div>
+          <div class="song-meta">${s.artist} · ${s.diff} · ${s.chords.join(' - ')}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (l.type === 'guitarhero') {
+    html += renderGuitarHeroSetup();
+  }
+
+  // Nav buttons
+  html += `<div class="nav-btns">`;
+  if (currentLesson > 0) {
+    html += `<button class="btn btn-secondary" onclick="goLesson(${currentLesson-1})">← Anterior</button>`;
+  }
+  if (currentLesson < lessons.length - 1) {
+    html += `<button class="btn btn-primary" onclick="nextLesson()">Próxima Lição →</button>`;
+  }
+  html += `</div>`;
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function renderVizPanel() {
+  return `
+    <div class="viz-panel">
+      <div class="viz-top">
+        <span class="viz-label">🎙 Entrada de áudio</span>
+        <span class="note-display" id="detectedNote">—</span>
+      </div>
+      <canvas id="vizCanvas" width="600" height="80"></canvas>
+    </div>`;
+}
+
+function renderChordCard(name) {
+  const d = chordData[name];
+  if (!d) return '';
+  const gridSVG = buildChordGridSVG(name, d);
+  const handSVG = buildHandSVG(name, d);
+
+  const legendHTML = d.legend.map(l => `
+    <div class="finger-row">
+      <div class="finger-dot" style="background:${l.color}">${l.finger}</div>
+      <span>${l.desc}</span>
+    </div>`).join('');
+
+  return `
+    <div class="chord-card" id="chord-${name}" onclick="selectTargetChord('${name}')">
+      <div class="chord-check-overlay" id="check-${name}">
+        <div class="chord-check-circle">
+          <svg viewBox="0 0 48 48" width="48" height="48">
+            <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="3" class="check-ring"/>
+            <polyline points="12,24 21,33 36,15" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="check-mark"/>
+          </svg>
+          <span>Acertou!</span>
+        </div>
+      </div>
+      <div class="chord-practice-badge" id="badge-${name}">🎯 Praticando</div>
+      <div class="chord-card-top">
+        ${gridSVG}
+        <div class="chord-info">
+          <div class="chord-name">${name}</div>
+          <div class="chord-label">${d.label}</div>
+          <div class="chord-fingers-legend">${legendHTML}</div>
+        </div>
+      </div>
+      <div class="chord-hand-wrap">
+        <div class="chord-hand-label">🖐 posição da mão</div>
+        ${handSVG}
+        <div style="font-size:12px;color:var(--accent);margin-top:8px;font-style:italic;">${d.hint}</div>
+      </div>
+    </div>`;
+}
+
+// Standard chord grid (fretboard view, top-down)
+function buildChordGridSVG(name, d) {
+  const W = 90, H = 110;
+  const strX = [8, 23, 38, 53, 68, 83];
+  const fretY = [20, 38, 56, 74, 92];
+  const fingerColors = { 1:'#e87070', 2:'#e8a840', 3:'#70b8e8', 4:'#80d880' };
+  let els = '';
+
+  // Nut (thick top bar)
+  els += `<rect x="8" y="16" width="75" height="4" rx="1" fill="#c8973a"/>`;
+
+  // Fret lines
+  for (let i = 0; i < 5; i++) {
+    els += `<line x1="8" y1="${fretY[i]}" x2="83" y2="${fretY[i]}" stroke="#3a2e1e" stroke-width="${i===0?0:1}"/>`;
+  }
+  // String lines
+  strX.forEach(x => {
+    els += `<line x1="${x}" y1="16" x2="${x}" y2="96" stroke="#5a4a2e" stroke-width="1.2"/>`;
+  });
+
+  // Fret numbers on left
+  for (let i = 1; i <= 4; i++) {
+    const y = fretY[i-1] + (fretY[i] - fretY[i-1]) / 2 + 4;
+    els += `<text x="2" y="${y}" font-size="7" fill="#5a4a2e" font-family="DM Mono">${i}</text>`;
+  }
+
+  // String labels (string number top)
+  ['6','5','4','3','2','1'].forEach((s,i) => {
+    els += `<text x="${strX[i]}" y="10" text-anchor="middle" font-size="7" fill="#5a4a2e" font-family="DM Mono">${s}</text>`;
+  });
+
+  // Dots
+  d.frets.forEach((fret, si) => {
+    const x = strX[si];
+    if (fret === -1) {
+      els += `<text x="${x}" y="101" text-anchor="middle" font-size="10" fill="#e05050" font-family="DM Mono">×</text>`;
+    } else if (fret === 0) {
+      els += `<circle cx="${x}" cy="101" r="4" fill="none" stroke="#4caf82" stroke-width="1.5"/>`;
+    } else {
+      const fy = fretY[fret - 1] + (fretY[fret] - fretY[fret-1]) / 2;
+      const finger = d.fingers[si];
+      const col = fingerColors[finger] || '#c8973a';
+      // Barre detection: if F chord, draw barre on fret 1
+      if (name === 'F' && fret === 1 && (si === 0 || si === 1 || si === 5)) {
+        // handled separately
+      }
+      els += `<circle cx="${x}" cy="${fy}" r="7" fill="${col}" opacity="0.92"/>`;
+      if (finger) els += `<text x="${x}" y="${fy+3.5}" text-anchor="middle" font-size="8" fill="#0d0a07" font-weight="bold" font-family="DM Mono">${finger}</text>`;
+    }
+  });
+
+  // Barre for F
+  if (name === 'F') {
+    const fy = fretY[0] + (fretY[1] - fretY[0]) / 2;
+    els = els.replace(/<circle cx="8"[^/]+\/>/g,'').replace(/<circle cx="23"[^/]+\/>/g,'').replace(/<circle cx="83"[^/]+\/>/g,'');
+    els += `<rect x="4" y="${fy-7}" width="83" height="14" rx="7" fill="#e87070" opacity="0.85"/>`;
+    els += `<text x="43" y="${fy+4}" text-anchor="middle" font-size="8" fill="#0d0a07" font-weight="bold" font-family="DM Mono">1</text>`;
+    // Re-add other fingers on top
+    d.frets.forEach((fret, si) => {
+      if (fret > 1) {
+        const x = strX[si];
+        const fyf = fretY[fret - 1] + (fretY[fret] - fretY[fret-1]) / 2;
+        const finger = d.fingers[si];
+        const col = fingerColors[finger] || '#c8973a';
+        els += `<circle cx="${x}" cy="${fyf}" r="7" fill="${col}" opacity="0.92"/>`;
+        if (finger) els += `<text x="${x}" y="${fyf+3.5}" text-anchor="middle" font-size="8" fill="#0d0a07" font-weight="bold" font-family="DM Mono">${finger}</text>`;
+      }
+    });
+  }
+
+  return `<svg class="chord-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="flex-shrink:0">
+    <rect width="${W}" height="${H}" fill="#141009" rx="6"/>
+    ${els}
+  </svg>`;
+}
+
+// Hand illustration SVG — a stylized view of the left hand on the fretboard
+function buildHandSVG(name, d) {
+  const W = 340, H = 160;
+  const fingerColors = { 1:'#e87070', 2:'#e8a840', 3:'#70b8e8', 4:'#80d880' };
+  const fingerLabel = { 1:'indicador', 2:'médio', 3:'anelar', 4:'mínimo' };
+
+  // Fretboard dimensions
+  const fbX = 10, fbY = 30, fbW = 320, fbH = 80;
+  // 6 strings, 4 frets visible
+  const strY = [fbY + 10, fbY + 22, fbY + 34, fbY + 46, fbY + 58, fbY + 70]; // low E to high E
+  const fretX = [fbX, fbX + fbW*0.22, fbX + fbW*0.44, fbX + fbW*0.66, fbX + fbW*0.88];
+
+  let els = '';
+
+  // Fretboard body (wood)
+  els += `<rect x="${fbX}" y="${fbY}" width="${fbW}" height="${fbH}" rx="4" fill="#2a1a08"/>`;
+  // Fret inlay dots
+  [0.33, 0.55].forEach(p => {
+    els += `<circle cx="${fbX + fbW*p}" cy="${fbY + fbH/2}" r="4" fill="#1a0e04" opacity="0.7"/>`;
+  });
+
+  // Fret wires
+  for (let i = 0; i <= 4; i++) {
+    const thickness = i === 0 ? 4 : 1.5;
+    const col = i === 0 ? '#c8973a' : '#4a3a20';
+    els += `<rect x="${fretX[i]-thickness/2}" y="${fbY}" width="${thickness}" height="${fbH}" rx="1" fill="${col}"/>`;
+    if (i > 0) els += `<text x="${fretX[i] - (fretX[i]-fretX[i-1])/2}" y="${fbY - 8}" text-anchor="middle" font-size="10" fill="#5a4a30" font-family="DM Mono">${i}ª</text>`;
+  }
+
+  // Strings
+  strY.forEach((y, si) => {
+    const thick = 1 + (5 - si) * 0.35;
+    els += `<line x1="${fbX}" y1="${y}" x2="${fbX+fbW}" y2="${y}" stroke="#8a7040" stroke-width="${thick}"/>`;
+    // String label on right
+    const strLabels = ['6ª(E)','5ª(A)','4ª(D)','3ª(G)','2ª(B)','1ª(E)'];
+    els += `<text x="${fbX+fbW+6}" y="${y+4}" font-size="8" fill="#5a4a30" font-family="DM Mono">${strLabels[si]}</text>`;
+  });
+
+  // Finger dots on fretboard
+  d.frets.forEach((fret, si) => {
+    const y = strY[si];
+    if (fret === -1) {
+      els += `<text x="${fbX-12}" y="${y+4}" text-anchor="middle" font-size="13" fill="#e05050">×</text>`;
+    } else if (fret === 0) {
+      els += `<circle cx="${fbX-12}" cy="${y}" r="6" fill="none" stroke="#4caf82" stroke-width="1.5"/>`;
+    } else {
+      const x = fretX[fret-1] + (fretX[fret] - fretX[fret-1]) / 2;
+      const finger = d.fingers[si];
+      const col = fingerColors[finger] || '#c8973a';
+
+      // Finger "pad" shape (rounded rectangle for barre, circle otherwise)
+      if (name === 'F' && finger === 1) {
+        // Barre — drawn once below
+      } else {
+        // Shadow
+        els += `<circle cx="${x}" cy="${y}" r="10" fill="rgba(0,0,0,0.4)"/>`;
+        // Fingertip
+        els += `<circle cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.95"/>`;
+        // Finger number
+        if (finger) els += `<text x="${x}" y="${y+4}" text-anchor="middle" font-size="9" fill="#0d0a07" font-weight="bold" font-family="DM Mono">${finger}</text>`;
+        // Label below
+        if (finger) els += `<text x="${x}" y="${fbY+fbH+14}" text-anchor="middle" font-size="9" fill="${col}" font-family="DM Mono">${fingerLabel[finger]||''}</text>`;
+      }
+    }
+  });
+
+  // Barre for F chord
+  if (name === 'F') {
+    const x = fretX[0] + (fretX[1] - fretX[0]) / 2;
+    const y1 = strY[0], y2 = strY[5];
+    els += `<rect x="${x-9}" y="${y1-9}" width="18" height="${y2-y1+18}" rx="9" fill="#e87070" opacity="0.9"/>`;
+    els += `<text x="${x}" y="${(y1+y2)/2+4}" text-anchor="middle" font-size="9" fill="#0d0a07" font-weight="bold" font-family="DM Mono">1</text>`;
+    els += `<text x="${x}" y="${fbY+fbH+14}" text-anchor="middle" font-size="9" fill="#e87070" font-family="DM Mono">pestana</text>`;
+    // Other fingers
+    d.frets.forEach((fret, si) => {
+      if (fret > 1) {
+        const fx = fretX[fret-1] + (fretX[fret] - fretX[fret-1]) / 2;
+        const fy = strY[si];
+        const finger = d.fingers[si];
+        const col = fingerColors[finger] || '#c8973a';
+        els += `<circle cx="${fx}" cy="${fy}" r="9" fill="${col}" opacity="0.95"/>`;
+        if (finger) els += `<text x="${fx}" y="${fy+4}" text-anchor="middle" font-size="9" fill="#0d0a07" font-weight="bold" font-family="DM Mono">${finger}</text>`;
+        if (finger) els += `<text x="${fx}" y="${fbY+fbH+14}" text-anchor="middle" font-size="9" fill="${col}" font-family="DM Mono">${fingerLabel[finger]||''}</text>`;
+      }
+    });
+  }
+
+  // Stylized hand/wrist coming from right
+  const wristX = fbX + fbW * 0.55;
+  // Palm
+  els += `<ellipse cx="${wristX + 60}" cy="${fbY + fbH + 38}" rx="55" ry="22" fill="#c8a060" opacity="0.18"/>`;
+  // Thumb hint
+  els += `<path d="M${wristX+80},${fbY+fbH+20} Q${wristX+100},${fbY+fbH+5} ${wristX+90},${fbY+fbH-5}" stroke="#c8a060" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.2"/>`;
+
+  return `<svg class="chord-hand-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${W}" height="${H}" fill="transparent"/>
+    ${els}
+  </svg>`;
+}
+
+function filterSongs() {
+  const q = document.getElementById('songSearch').value.toLowerCase();
+  const list = document.getElementById('songList');
+  list.innerHTML = '';
+  songs.filter(s => s.name.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)).forEach((s, i) => {
+    list.innerHTML += `
+      <div class="song-item" onclick="selectSong(${songs.indexOf(s)})">
+        <div class="song-name">${s.name}</div>
+        <div class="song-meta">${s.artist} · ${s.diff} · ${s.chords.join(' - ')}</div>
+      </div>`;
+  });
+}
+
+function selectSong(i) {
+  const s = songs[i];
+  showToast(`🎵 ${s.name} carregada! Acordes: ${s.chords.join(', ')}`);
+  // Inject song lesson
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <div class="lesson-header">
+      <div class="lesson-tag">♪ Música Selecionada</div>
+      <h1 class="lesson-title">${s.name}</h1>
+      <p class="lesson-desc">${s.artist} · Nível: ${s.diff}</p>
+    </div>
+    ${renderVizPanel()}
+    <div class="chord-grid">
+      ${s.chords.filter(c => chordData[c]).map(c => renderChordCard(c)).join('')}
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <h4>Aprenda os acordes</h4>
+          <p>Pratique cada acorde individualmente antes de tentar a música completa. Use o microfone para verificar.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <h4>Sequência: ${s.chords.join(' → ')}</h4>
+          <p>Esta é a progressão de acordes da música. Treine as transições nessa ordem até ficar natural.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-content">
+          <h4>Adicione o ritmo</h4>
+          <p>Quando as trocas de acorde estiverem fluindo, adicione a batida característica da música. Comece sempre mais devagar!</p>
+        </div>
+      </div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="goLesson(6)">← Voltar</button>
+    </div>`;
+  if (micActive) drawViz();
+};
+
+function nextLesson() {
+  completedLessons.add(currentLesson);
+  const ln = document.getElementById(`ln${currentLesson}`);
+  if (ln) { ln.style.background = 'var(--green)'; ln.style.color = '#fff'; }
+  goLesson(currentLesson + 1);
+}
+
+// ─── GUITAR HERO ────────────────────────────────────────────────
+
+// GH state
+let ghSong = null;       // { title, artist, chords: [{name, beats}] }
+let ghPlaying = false;
+let ghAnimFrame = null;
+let ghNotes = [];        // falling note objects
+let ghCurrentIdx = 0;   // which chord is next to appear
+let ghScore = 0;
+let ghCombo = 0;
+let ghHits = 0;
+let ghMisses = 0;
+let ghBpm = 80;
+let ghBeatsPerChord = 2;
+let ghLastSpawn = 0;
+let ghSpawnInterval = 0; // ms between spawns = (60000/bpm)*beatsPerChord
+let ghStartTime = 0;
+let ghFeedbackTimer = 0;
+
+const GH_COLORS = ['#e87070','#70c8e8','#80d880','#e8a840','#c070e8','#e8e870','#70e8b8','#e87090'];
+
+function renderGuitarHeroSetup() {
+  return `
+    <div class="gh-setup">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">Cole o link da cifra</div>
+      <div class="gh-url-row">
+        <input class="gh-url-input" id="ghUrl" placeholder="https://www.cifraclub.com.br/artista/musica/" />
+        <button class="gh-load-btn" onclick="ghLoadCifra()">Carregar</button>
+      </div>
+      <div class="gh-bpm-row">
+        <label>BPM:</label>
+        <input class="gh-bpm-input" id="ghBpm" type="number" value="80" min="40" max="200" />
+        <label>Batidas por acorde:</label>
+        <input class="gh-beats-input" id="ghBeats" type="number" value="2" min="1" max="8" />
+        <span style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;">← ajuste ao ritmo da música</span>
+      </div>
+    </div>
+
+    <div id="ghManualWrap" style="margin-bottom:20px;">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:1px;">OU ADICIONE ACORDES MANUALMENTE (separados por espaço ou vírgula):</div>
+      <div style="display:flex;gap:10px;">
+        <input class="gh-url-input" id="ghManual" placeholder="Ex: G Em C D G Em C D" style="font-size:14px;" />
+        <input class="gh-url-input" id="ghTitle" placeholder="Nome da música" style="max-width:200px;" />
+        <button class="gh-load-btn" onclick="ghLoadManual()">Usar</button>
+      </div>
+    </div>
+
+    <div id="ghSongPreview" style="display:none">
+      <div class="gh-song-info">
+        <div>
+          <div class="gh-song-title" id="ghSongTitle">—</div>
+          <div class="gh-song-artist" id="ghSongArtist">—</div>
+        </div>
+        <div class="gh-controls">
+          <div class="gh-score-display">
+            <span class="gh-score-val" id="ghScoreVal">0</span>
+            <span class="gh-combo-val" id="ghComboVal">combo ×0</span>
+          </div>
+          <button class="gh-play-btn" id="ghPlayBtn" onclick="ghTogglePlay()">▶ Iniciar</button>
+        </div>
+      </div>
+
+      <div class="gh-chord-list-preview" id="ghChordPreview"></div>
+
+      <div class="gh-stage-wrap" style="margin-top:16px;">
+        <canvas id="ghCanvas" width="700" height="340"></canvas>
+        <div class="gh-countdown" id="ghCountdown">3</div>
+        <div class="gh-feedback" id="ghFeedback">PERFECT!</div>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:8px;text-align:center;">
+        🎙 Ative o microfone e toque o acorde quando ele chegar à <strong style="color:var(--accent)">linha dourada</strong>
+      </div>
+    </div>`;
+}
+
+// Parse a CifraClub URL using a CORS proxy to extract chord names
+async function ghLoadCifra() {
+  const url = document.getElementById('ghUrl').value.trim();
+  if (!url || !url.includes('cifraclub')) {
+    showToast('❌ Cole um link válido do CifraClub');
+    return;
+  }
+  showToast('⏳ Carregando cifra...');
+  const btn = document.querySelector('.gh-load-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    // Use allorigins proxy to bypass CORS
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy);
+    const data = await res.json();
+    const html = data.contents;
+    const chords = ghParseChordsFromHTML(html);
+
+    if (chords.length === 0) throw new Error('Sem acordes');
+
+    // Try to extract title/artist from URL
+    const parts = url.replace(/\/$/, '').split('/');
+    const title = (parts[parts.length-1] || 'Música').replace(/-/g,' ');
+    const artist = (parts[parts.length-2] || 'Artista').replace(/-/g,' ');
+
+    ghSetSong({ title, artist, chords });
+    showToast(`✅ ${chords.length} acordes carregados!`);
+  } catch(e) {
+    showToast('⚠️ Não foi possível carregar. Use a entrada manual abaixo.');
+  }
+  if (btn) btn.disabled = false;
+}
+
+function ghParseChordsFromHTML(html) {
+  // CifraClub stores chords in <b> or <a class="chord"> or chord class spans
+  const raw = [];
+
+  // Try to find chord spans — CifraClub uses <b> tags for chords in their pre blocks
+  const preMatch = html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/gi) || [];
+  const fullText = preMatch.join('\n');
+
+  // Extract content from <b> tags (chords) inside pre
+  const bRegex = /<b[^>]*>([^<]+)<\/b>/gi;
+  let m;
+  while ((m = bRegex.exec(fullText)) !== null) {
+    const chord = m[1].trim();
+    if (ghIsChordName(chord)) raw.push(chord);
+  }
+
+  // Also try <a ... class="...chord...">
+  const aRegex = /<a[^>]*class="[^"]*chord[^"]*"[^>]*>([^<]+)<\/a>/gi;
+  while ((m = aRegex.exec(html)) !== null) {
+    const chord = m[1].trim();
+    if (ghIsChordName(chord)) raw.push(chord);
+  }
+
+  // Deduplicate consecutive same chords, keep order
+  const deduped = raw.filter((c, i) => i === 0 || c !== raw[i-1]);
+  return deduped.slice(0, 120); // cap at 120
+}
+
+function ghIsChordName(s) {
+  if (!s || s.length > 8 || s.length < 1) return false;
+  return /^[A-G][#b]?(m|maj|min|sus|dim|aug|add)?[0-9]?[\/\w]?$/.test(s);
+}
+
+function ghLoadManual() {
+  const raw = document.getElementById('ghManual').value.trim();
+  const title = document.getElementById('ghTitle').value.trim() || 'Minha Música';
+  if (!raw) { showToast('❌ Digite alguns acordes'); return; }
+
+  const chords = raw.split(/[\s,]+/).filter(c => c.length > 0);
+  if (chords.length === 0) { showToast('❌ Nenhum acorde reconhecido'); return; }
+
+  ghSetSong({ title, artist: 'Manual', chords });
+  showToast(`✅ ${chords.length} acordes carregados!`);
+}
+
+function ghSetSong(data) {
+  ghSong = data;
+  ghScore = 0; ghCombo = 0; ghHits = 0; ghMisses = 0;
+  ghPlaying = false;
+
+  const preview = document.getElementById('ghSongPreview');
+  if (preview) preview.style.display = 'block';
+
+  const t = document.getElementById('ghSongTitle');
+  const a = document.getElementById('ghSongArtist');
+  if (t) t.textContent = ghCapWords(data.title);
+  if (a) a.textContent = ghCapWords(data.artist);
+
+  // Show chord preview chips
+  const cp = document.getElementById('ghChordPreview');
+  if (cp) {
+    const unique = [...new Set(data.chords)];
+    cp.innerHTML = unique.map(c => `<div class="gh-chord-tag">${c}</div>`).join('');
+  }
+
+  // Draw idle stage
+  ghDrawIdle();
+}
+
+function ghCapWords(s) {
+  return s.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function ghTogglePlay() {
+  if (!ghSong) return;
+  if (ghPlaying) {
+    ghStop();
+  } else {
+    ghStartCountdown();
+  }
+}
+
+function ghStartCountdown() {
+  const cd = document.getElementById('ghCountdown');
+  const btn = document.getElementById('ghPlayBtn');
+  if (btn) { btn.textContent = '…'; btn.disabled = true; }
+
+  let n = 3;
+  cd.classList.add('show');
+  cd.textContent = n;
+
+  const tick = setInterval(() => {
+    n--;
+    if (n > 0) {
+      cd.textContent = n;
+    } else {
+      clearInterval(tick);
+      cd.classList.remove('show');
+      if (btn) { btn.textContent = '■ Parar'; btn.disabled = false; btn.classList.add('stop'); }
+      ghStart();
+    }
+  }, 800);
+}
+
+function ghStart() {
+  ghPlaying = true;
+  ghNotes = [];
+  ghCurrentIdx = 0;
+  ghScore = 0; ghCombo = 0; ghHits = 0; ghMisses = 0;
+  ghBpm = parseInt(document.getElementById('ghBpm')?.value || '80');
+  ghBeatsPerChord = parseInt(document.getElementById('ghBeats')?.value || '2');
+  ghSpawnInterval = (60000 / ghBpm) * ghBeatsPerChord;
+  ghStartTime = performance.now();
+  ghLastSpawn = ghStartTime - ghSpawnInterval; // spawn first immediately
+  ghUpdateScore();
+  ghLoop(ghStartTime);
+}
+
+function ghStop() {
+  ghPlaying = false;
+  cancelAnimationFrame(ghAnimFrame);
+  const btn = document.getElementById('ghPlayBtn');
+  if (btn) { btn.textContent = '▶ Reiniciar'; btn.classList.remove('stop'); btn.disabled = false; }
+  ghShowResult();
+}
+
+function ghLoop(ts) {
+  if (!ghPlaying) return;
+  ghAnimFrame = requestAnimationFrame(ghLoop);
+
+  const canvas = document.getElementById('ghCanvas');
+  if (!canvas) { ghStop(); return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const hitLineY = H - 70;
+  const noteSpeed = H / (ghSpawnInterval * 2.5) * 16.67; // px per frame at 60fps
+
+  // Spawn new notes
+  if (ts - ghLastSpawn >= ghSpawnInterval && ghCurrentIdx < ghSong.chords.length) {
+    const name = ghSong.chords[ghCurrentIdx];
+    const colorIdx = ghCurrentIdx % GH_COLORS.length;
+    ghNotes.push({
+      name,
+      y: -60,
+      color: GH_COLORS[colorIdx],
+      state: 'falling', // falling | hit | miss | passed
+      idx: ghCurrentIdx
+    });
+    ghCurrentIdx++;
+    ghLastSpawn = ts;
+  }
+
+  // Move notes
+  ghNotes.forEach(n => {
+    if (n.state === 'falling') n.y += noteSpeed;
+  });
+
+  // Check for missed notes (passed the hit line without being hit)
+  ghNotes.forEach(n => {
+    if (n.state === 'falling' && n.y > hitLineY + 50) {
+      n.state = 'missed';
+      ghCombo = 0;
+      ghMisses++;
+      ghUpdateScore();
+      ghShowFeedback('MISS', '#e05050');
+    }
+  });
+
+  // Remove old notes
+  ghNotes = ghNotes.filter(n => n.y < H + 80 && n.state !== 'hit_done');
+
+  // Draw
+  ghDraw(ctx, W, H, hitLineY);
+
+  // End of song
+  if (ghCurrentIdx >= ghSong.chords.length && ghNotes.filter(n => n.state === 'falling').length === 0) {
+    setTimeout(ghStop, 800);
+  }
+}
+
+function ghDraw(ctx, W, H, hitLineY) {
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#050204');
+  bg.addColorStop(1, '#0e0810');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Lane lines (subtle)
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W/6) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+
+  // Perspective grid lines
+  for (let i = 0; i < 8; i++) {
+    const y = (H / 8) * i;
+    const alpha = 0.02 + (i / 8) * 0.08;
+    ctx.strokeStyle = `rgba(200,151,58,${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Hit zone glow
+  const glowGrad = ctx.createLinearGradient(0, hitLineY - 30, 0, hitLineY + 30);
+  glowGrad.addColorStop(0, 'rgba(200,151,58,0)');
+  glowGrad.addColorStop(0.5, 'rgba(200,151,58,0.15)');
+  glowGrad.addColorStop(1, 'rgba(200,151,58,0)');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(0, hitLineY - 30, W, 60);
+
+  // Hit line
+  ctx.strokeStyle = '#c8973a';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = '#c8973a';
+  ctx.shadowBlur = 10;
+  ctx.beginPath(); ctx.moveTo(0, hitLineY); ctx.lineTo(W, hitLineY); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Hit line label
+  ctx.fillStyle = 'rgba(200,151,58,0.5)';
+  ctx.font = '10px DM Mono, monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('TOQUE AQUI', W - 10, hitLineY - 6);
+  ctx.textAlign = 'left';
+
+  // Draw notes
+  ghNotes.forEach(n => {
+    if (n.state === 'missed') return;
+    if (n.state === 'hit') return;
+
+    // Distribute notes across lanes based on chord index
+    const laneCount = Math.min(ghSong.chords.length, 5);
+    const lane = n.idx % laneCount;
+    const laneW = W / laneCount;
+    const x = lane * laneW + laneW / 2;
+    const noteH = 52, noteW = Math.min(laneW - 20, 130);
+    const y = n.y;
+    const radius = 10;
+
+    // Shadow
+    ctx.shadowColor = n.color;
+    ctx.shadowBlur = 18;
+
+    // Body
+    ctx.fillStyle = n.color;
+    ctx.globalAlpha = 0.92;
+    roundRect(ctx, x - noteW/2, y - noteH/2, noteW, noteH, radius);
+    ctx.fill();
+
+    // Gloss
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#fff';
+    roundRect(ctx, x - noteW/2 + 6, y - noteH/2 + 6, noteW - 12, noteH/3, 6);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+
+    // Text
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${n.name.length > 3 ? 18 : 22}px Playfair Display, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(n.name, x, y);
+    ctx.shadowBlur = 0;
+    ctx.textBaseline = 'alphabetic';
+  });
+
+  // Progress bar
+  const prog = ghCurrentIdx / Math.max(ghSong.chords.length, 1);
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fillRect(0, H - 6, W, 6);
+  ctx.fillStyle = '#c8973a';
+  ctx.fillRect(0, H - 6, W * prog, 6);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function ghDrawIdle() {
+  const canvas = document.getElementById('ghCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#050204';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(200,151,58,0.4)';
+  ctx.font = '16px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Pronto para começar — pressione ▶ Iniciar', W/2, H/2);
+  ctx.textAlign = 'left';
+}
+
+// Called from pitch detection when in GH mode
+function ghDetectHit() {
+  if (!ghPlaying || !analyser) return;
+  const freqBuf = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(freqBuf);
+  const sr = audioCtx.sampleRate;
+  const binHz = sr / analyser.fftSize;
+  const THRESHOLD = -48;
+  const detected = new Set();
+
+  for (let i = 2; i < freqBuf.length * 0.55; i++) {
+    if (freqBuf[i] > THRESHOLD && freqBuf[i] > freqBuf[i-1] && freqBuf[i] > freqBuf[i+1]) {
+      const freq = i * binHz;
+      if (freq < 60 || freq > 1400) continue;
+      const noteIdx = Math.round(12 * Math.log2(freq / 440)) + 69;
+      detected.add(NOTE_STRINGS[((noteIdx % 12) + 12) % 12]);
+    }
+  }
+
+  if (detected.size < 2) return; // at least 2 notes detected to avoid false positives
+
+  // Find notes in hit zone
+  const canvas = document.getElementById('ghCanvas');
+  if (!canvas) return;
+  const H = canvas.height;
+  const hitLineY = H - 70;
+  const window = 55; // px tolerance
+
+  const inZone = ghNotes.filter(n =>
+    n.state === 'falling' &&
+    n.y >= hitLineY - window && n.y <= hitLineY + window
+  );
+
+  if (inZone.length === 0) return;
+
+  const target = inZone[0];
+  const targetNotes = CHORD_NOTES[target.name] || [target.name.replace(/[^A-G#b]/g,'')];
+  const matchCount = targetNotes.filter(n => detected.has(n)).length;
+  const matchRatio = matchCount / targetNotes.length;
+
+  if (matchRatio >= 0.5) {
+    target.state = 'hit';
+    ghHits++;
+    ghCombo++;
+    const points = 100 * Math.min(ghCombo, 10);
+    ghScore += points;
+    ghUpdateScore();
+
+    const label = ghCombo >= 10 ? '🔥 PERFECT!' : ghCombo >= 5 ? 'GREAT!' : 'GOOD!';
+    const col = ghCombo >= 10 ? '#f0d080' : ghCombo >= 5 ? '#80d880' : '#70c8e8';
+    ghShowFeedback(label, col);
+
+    // Remove after flash
+    setTimeout(() => { target.state = 'hit_done'; }, 200);
+  }
+}
+
+function ghUpdateScore() {
+  const sv = document.getElementById('ghScoreVal');
+  const cv = document.getElementById('ghComboVal');
+  if (sv) sv.textContent = ghScore.toLocaleString('pt-BR');
+  if (cv) cv.textContent = `combo ×${ghCombo}`;
+}
+
+function ghShowFeedback(text, color) {
+  const el = document.getElementById('ghFeedback');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = color;
+  el.style.textShadow = `0 0 30px ${color}`;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 700);
+}
+
+function ghShowResult() {
+  const total = ghHits + ghMisses;
+  const acc = total > 0 ? Math.round((ghHits / total) * 100) : 0;
+  const rating = acc >= 90 ? '🎸 Lenda!' : acc >= 70 ? '🌟 Ótimo!' : acc >= 50 ? '👍 Bom!' : '💪 Continue praticando!';
+
+  const main = document.getElementById('mainContent');
+  if (!main) return;
+
+  // Append result panel below canvas
+  const existing = document.getElementById('ghResultPanel');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.id = 'ghResultPanel';
+  div.className = 'gh-result-panel';
+  div.style.marginTop = '20px';
+  div.innerHTML = `
+    <h2>${rating}</h2>
+    <div class="big-score">${ghScore.toLocaleString('pt-BR')}</div>
+    <p>Acertos: <strong>${ghHits}</strong> / ${total} &nbsp;·&nbsp; Precisão: <strong>${acc}%</strong> &nbsp;·&nbsp; Combo máx: <strong>×${ghCombo}</strong></p>
+    <div style="margin-top:20px;">
+      <button class="gh-play-btn" onclick="ghTogglePlay()" style="margin:0 auto;display:block;">▶ Jogar Novamente</button>
+    </div>`;
+  main.appendChild(div);
+}
+
+// ─── CHORD PRACTICE ─────────────────────────────────────────────
+function selectTargetChord(name) {
+  // If already selected, deselect
+  if (targetChord === name) {
+    clearTargetChord();
+    return;
+  }
+
+  // Clear previous selection visual
+  if (targetChord) {
+    const prev = document.getElementById(`chord-${targetChord}`);
+    if (prev) { prev.classList.remove('chord-target'); }
+    const prevBadge = document.getElementById(`badge-${targetChord}`);
+    if (prevBadge) prevBadge.classList.remove('visible');
+    // Clear check if switching chord
+    const prevCheck = document.getElementById(`check-${targetChord}`);
+    if (prevCheck) prevCheck.classList.remove('visible');
+  }
+
+  targetChord = name;
+  chordHitBuffer = [];
+  chordChecked = false;
+
+  const card = document.getElementById(`chord-${name}`);
+  if (card) card.classList.add('chord-target');
+  const badge = document.getElementById(`badge-${name}`);
+  if (badge) badge.classList.add('visible');
+
+  if (!micActive) showToast('🎙 Ative o microfone e toque o acorde ' + name + '!');
+  else showToast('🎯 Toque o acorde ' + name + ' no violão!');
+}
+
+function clearTargetChord() {
+  if (targetChord) {
+    const card = document.getElementById(`chord-${targetChord}`);
+    if (card) card.classList.remove('chord-target');
+    const badge = document.getElementById(`badge-${targetChord}`);
+    if (badge) badge.classList.remove('visible');
+    const check = document.getElementById(`check-${targetChord}`);
+    if (check) check.classList.remove('visible');
+  }
+  targetChord = null;
+  chordHitBuffer = [];
+  chordChecked = false;
+}
+
+// Analyse frequency data to detect which chord notes are present
+function detectChordFromFFT() {
+  if (!analyser || !targetChord) return;
+  const bufSize = analyser.fftSize;
+  const freqBuf = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(freqBuf);
+
+  const sr = audioCtx.sampleRate;
+  const binHz = sr / bufSize;
+
+  // Find peaks above noise floor
+  const THRESHOLD = -50; // dB
+  const detectedNotes = new Set();
+
+  for (let i = 2; i < freqBuf.length * 0.6; i++) {
+    if (freqBuf[i] > THRESHOLD &&
+        freqBuf[i] > freqBuf[i-1] && freqBuf[i] > freqBuf[i+1]) {
+      const freq = i * binHz;
+      if (freq < 80 || freq > 1200) continue;
+      const noteIdx = Math.round(12 * Math.log2(freq / 440)) + 69;
+      const noteName = NOTE_STRINGS[((noteIdx % 12) + 12) % 12];
+      detectedNotes.add(noteName);
+    }
+  }
+
+  // Score: how many target chord notes are detected
+  const target = CHORD_NOTES[targetChord];
+  if (!target) return;
+  const hits = target.filter(n => detectedNotes.has(n)).length;
+  const score = hits / target.length;
+
+  // Rolling buffer: need 60%+ match for 6+ consecutive frames
+  chordHitBuffer.push(score >= 0.6 ? 1 : 0);
+  if (chordHitBuffer.length > 10) chordHitBuffer.shift();
+
+  const sustained = chordHitBuffer.length >= 6 &&
+    chordHitBuffer.slice(-6).reduce((a,b) => a+b, 0) >= 5;
+
+  if (sustained && !chordChecked) {
+    chordChecked = true;
+    triggerChordSuccess(targetChord);
+  }
+}
+
+function triggerChordSuccess(name) {
+  const check = document.getElementById(`check-${name}`);
+  if (check) {
+    check.classList.add('visible');
+    // Draw waveform green briefly
+    const canvas = document.getElementById('vizCanvas');
+    if (canvas) canvas.style.borderColor = 'var(--green)';
+  }
+  showToast('🎉 Perfeito! Acorde ' + name + ' detectado!');
+  // Pulse the card
+  const card = document.getElementById(`chord-${name}`);
+  if (card) {
+    card.classList.add('chord-success-pulse');
+    setTimeout(() => card.classList.remove('chord-success-pulse'), 800);
+  }
+}
+
+// ─── AUDIO ──────────────────────────────────────────────────────
+async function toggleMic() {
+  if (!micActive) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioCtx = new AudioContext();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 4096;
+      audioCtx.createMediaStreamSource(stream).connect(analyser);
+      micActive = true;
+      document.getElementById('micBtn').classList.add('active');
+      document.getElementById('micLabel').textContent = 'Microfone Ativo';
+      showToast('🎙 Microfone ativado!');
+      drawViz();
+      startPitchDetection();
+    } catch(e) {
+      showToast('❌ Permissão de microfone negada');
+    }
+  } else {
+    micActive = false;
+    cancelAnimationFrame(animFrame);
+    audioCtx.close();
+    document.getElementById('micBtn').classList.remove('active');
+    document.getElementById('micLabel').textContent = 'Ativar Microfone';
+  }
+}
+
+function drawViz() {
+  const canvas = document.getElementById('vizCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const buf = new Uint8Array(analyser.frequencyBinCount);
+
+  function frame() {
+    animFrame = requestAnimationFrame(frame);
+    const c2 = document.getElementById('vizCanvas');
+    if (!c2) return;
+    analyser.getByteTimeDomainData(buf);
+    ctx.fillStyle = '#0d0a07';
+    ctx.fillRect(0, 0, W, H);
+    ctx.beginPath();
+    ctx.strokeStyle = '#c8973a';
+    ctx.lineWidth = 1.5;
+    const sl = W / buf.length;
+    let x = 0;
+    for (let i = 0; i < buf.length; i++) {
+      const v = buf[i] / 128;
+      const y = (v * H) / 2;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      x += sl;
+    }
+    ctx.stroke();
+  }
+  frame();
+}
+
+function startPitchDetection() {
+  const buf = new Float32Array(analyser.fftSize);
+  function detect() {
+    if (!micActive) return;
+    analyser.getFloatTimeDomainData(buf);
+    const freq = autoCorrelate(buf, audioCtx.sampleRate);
+    if (freq > 60 && freq < 1500) {
+      updateTuner(freq);
+      const note = freqToNote(freq);
+      const el = document.getElementById('detectedNote');
+      if (el) el.textContent = note;
+    }
+    // Chord detection
+    detectChordFromFFT();
+    // Guitar Hero hit detection
+    if (ghPlaying) ghDetectHit();
+    setTimeout(detect, 80);
+  }
+  detect();
+}
+
+function autoCorrelate(buf, sr) {
+  let size = buf.length;
+  let rms = 0;
+  for (let i = 0; i < size; i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / size);
+  if (rms < 0.01) return -1;
+  let r1 = 0, r2 = size - 1;
+  for (let i = 0; i < size / 2; i++) { if (Math.abs(buf[i]) < 0.2) { r1 = i; break; } }
+  for (let i = 1; i < size / 2; i++) { if (Math.abs(buf[size - i]) < 0.2) { r2 = size - i; break; } }
+  buf = buf.slice(r1, r2);
+  size = buf.length;
+  const c = new Float32Array(size).fill(0);
+  for (let i = 0; i < size; i++) for (let j = 0; j < size - i; j++) c[i] += buf[j] * buf[j + i];
+  let d = 0;
+  while (c[d] > c[d + 1]) d++;
+  let maxval = -1, maxpos = -1;
+  for (let i = d; i < size; i++) { if (c[i] > maxval) { maxval = c[i]; maxpos = i; } }
+  let T0 = maxpos;
+  const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+  const a = (x1 + x3 - 2 * x2) / 2, b = (x3 - x1) / 2;
+  if (a) T0 -= b / (2 * a);
+  return sr / T0;
+}
+
+function freqToNote(freq) {
+  const n = Math.round(12 * Math.log2(freq / 440)) + 69;
+  return NOTE_STRINGS[n % 12] + Math.floor(n / 12 - 1);
+}
+
+function updateTuner(freq) {
+  const strings = { E2:82.41, A2:110, D3:146.83, G3:196, B3:246.94, E4:329.63 };
+  let closest = null, minDiff = Infinity;
+  for (const [name, target] of Object.entries(strings)) {
+    const diff = Math.abs(freq - target);
+    if (diff < minDiff) { minDiff = diff; closest = { name, target }; }
+  }
+  if (!closest) return;
+  const cents = 1200 * Math.log2(freq / closest.target);
+  const bar = document.getElementById('pitchBar');
+  const label = document.getElementById('pitchLabel');
+  if (bar) {
+    const pct = Math.max(5, Math.min(95, 50 + cents * 0.8));
+    bar.style.left = pct + '%';
+    bar.style.background = Math.abs(cents) < 5 ? 'var(--green)' : 'var(--accent)';
+  }
+  if (label) {
+    const tune = Math.abs(cents) < 5 ? '✓ Afinado!' : cents < 0 ? `↑ +${Math.abs(cents).toFixed(0)}¢ (aperte)` : `↓ -${Math.abs(cents).toFixed(0)}¢ (afrouxe)`;
+    label.textContent = `${closest.name} — ${tune}`;
+    label.style.color = Math.abs(cents) < 5 ? 'var(--green)' : 'var(--muted)';
+  }
+  // Highlight string button
+  const map = { E2:'str6', A2:'str5', D3:'str4', G3:'str3', B3:'str2', E4:'str1' };
+  document.querySelectorAll('.string-btn').forEach(b => b.classList.remove('in-tune'));
+  if (Math.abs(cents) < 10) {
+    const el = document.getElementById(map[closest.name]);
+    if (el) el.classList.add('in-tune');
+  }
+}
+
+// ─── THEME ──────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('vm-theme', isLight ? 'light' : 'dark');
+  // Update theme-color meta for browser chrome
+  const meta = document.getElementById('themeColorMeta');
+  if (meta) meta.content = isLight ? '#f5f0e8' : '#0d0a07';
+  showToast(isLight ? '☀️ Tema claro ativado' : '🌙 Tema escuro ativado');
+}
+
+// Restore saved theme on load (runs before render to avoid flash)
+(function() {
+  const saved = localStorage.getItem('vm-theme');
+  // Default to system preference if no saved preference
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    const meta = document.getElementById('themeColorMeta');
+    if (meta) meta.content = '#f5f0e8';
+  } else if (!saved && window.matchMedia('(prefers-color-scheme: light)').matches) {
+    document.documentElement.classList.add('light');
+    const meta = document.getElementById('themeColorMeta');
+    if (meta) meta.content = '#f5f0e8';
+  }
+})();
+
+// ─── PWA / SPLASH ───────────────────────────────────────────────
+// Splash screen dismiss
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const s = document.getElementById('splashScreen');
+    if (s) {
+      s.classList.add('fade');
+      setTimeout(() => s.remove(), 700);
+    }
+  }, 1800);
+
+  // Service Worker registration
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  }
+});
+
+// Online / offline detection
+window.addEventListener('offline', () => {
+  document.getElementById('offlineBadge')?.classList.add('show');
+});
+window.addEventListener('online', () => {
+  document.getElementById('offlineBadge')?.classList.remove('show');
+});
+
+// PWA Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('installBanner');
+  if (banner && !localStorage.getItem('vm-installed')) {
+    banner.classList.add('show');
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem('vm-installed', '1');
+  document.getElementById('installBanner')?.classList.remove('show');
+  showToast('🎉 App instalado com sucesso!');
+});
+
+async function installPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    localStorage.setItem('vm-installed', '1');
+    document.getElementById('installBanner')?.classList.remove('show');
+  }
+  deferredPrompt = null;
+}
+
+// ─── UTILS ──────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
