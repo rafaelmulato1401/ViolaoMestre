@@ -1056,6 +1056,154 @@
     #micLabel { display:none; }
     .header-controls { gap:8px; }
   }
+  /* ── MIC PERMISSION MODAL ───────────────────────────── */
+  .mic-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 3, 3, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 8000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mic-modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mic-modal {
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px 24px 0 0;
+    padding: 32px 28px 40px;
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.45s cubic-bezier(0.34, 1.1, 0.64, 1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  }
+
+  .mic-modal-overlay.show .mic-modal {
+    transform: translateY(0);
+  }
+
+  /* Pull handle */
+  .mic-modal::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: 0 auto 24px;
+  }
+
+  .mic-modal-icon {
+    font-size: 56px;
+    margin-bottom: 14px;
+    animation: micPulse 2s ease infinite;
+  }
+
+  @keyframes micPulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.12); }
+  }
+
+  .mic-modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .mic-modal-desc {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .mic-modal-desc strong { color: var(--text); }
+
+  .mic-modal-features {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .mic-modal-feat {
+    background: rgba(160,104,32,0.1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: var(--text);
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .mic-modal-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+    opacity: 0.8;
+  }
+
+  .mic-modal-btn-allow {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .mic-modal-btn-allow:hover,
+  .mic-modal-btn-allow:active {
+    background: var(--accent2);
+    transform: scale(0.98);
+  }
+
+  .mic-modal-btn-skip {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .mic-modal-btn-skip:hover { color: var(--text); }
+
+  /* ── MIC BUTTON STATES ────────────────────────────── */
+  .mic-btn.denied {
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+  }
+
+  .mic-btn.denied .mic-dot { background: var(--red) !important; }
+
 </style>
 </head>
 <body>
@@ -1066,6 +1214,25 @@
   <div class="splash-sub">Aprenda do zero</div>
   <div class="splash-bar"><div class="splash-bar-fill"></div></div>
   <div class="splash-by">por Rafael Mulato</div>
+</div>
+
+<!-- Mic Permission Modal -->
+<div id="micModal" class="mic-modal-overlay">
+  <div class="mic-modal">
+    <div class="mic-modal-icon">🎙</div>
+    <h2 class="mic-modal-title">Usar o Microfone?</h2>
+    <p class="mic-modal-desc">
+      O ViolãoMestre usa o microfone para <strong>afinar seu violão</strong> e <strong>detectar acordes</strong> em tempo real enquanto você toca.
+    </p>
+    <div class="mic-modal-features">
+      <div class="mic-modal-feat">🎵 Afinador automático</div>
+      <div class="mic-modal-feat">✅ Detecta seus acordes</div>
+      <div class="mic-modal-feat">🎸 Modo Guitar Hero</div>
+    </div>
+    <p class="mic-modal-note">Nenhum áudio é gravado ou enviado. Tudo acontece localmente no seu aparelho.</p>
+    <button class="mic-modal-btn-allow" onclick="allowMic()">🎙 Permitir Microfone</button>
+    <button class="mic-modal-btn-skip" onclick="skipMic()">Agora não</button>
+  </div>
 </div>
 
 <!-- Offline indicator -->
@@ -2474,20 +2641,27 @@ async function toggleMic() {
       analyser.fftSize = 4096;
       audioCtx.createMediaStreamSource(stream).connect(analyser);
       micActive = true;
-      document.getElementById('micBtn').classList.add('active');
-      document.getElementById('micLabel').textContent = 'Microfone Ativo';
-      showToast('🎙 Microfone ativado!');
+      const btn = document.getElementById('micBtn');
+      const label = document.getElementById('micLabel');
+      if (btn) { btn.classList.add('active'); btn.classList.remove('denied'); btn.onclick = toggleMic; }
+      if (label) label.textContent = '🎙 Ativo';
       drawViz();
       startPitchDetection();
     } catch(e) {
-      showToast('❌ Permissão de microfone negada');
+      const btn = document.getElementById('micBtn');
+      const label = document.getElementById('micLabel');
+      if (btn) { btn.classList.add('denied'); btn.onclick = () => showToast('⚙️ Vá em Configurações > Privacidade para permitir o microfone'); }
+      if (label) label.textContent = 'Bloqueado';
+      showToast('❌ Microfone bloqueado — verifique as permissões do navegador');
     }
   } else {
     micActive = false;
     cancelAnimationFrame(animFrame);
     audioCtx.close();
-    document.getElementById('micBtn').classList.remove('active');
-    document.getElementById('micLabel').textContent = 'Ativar Microfone';
+    const btn = document.getElementById('micBtn');
+    const label = document.getElementById('micLabel');
+    if (btn) { btn.classList.remove('active'); btn.onclick = toggleMic; }
+    if (label) label.textContent = 'Microfone';
   }
 }
 
@@ -2627,23 +2801,78 @@ function toggleTheme() {
 })();
 
 // ─── PWA / SPLASH ───────────────────────────────────────────────
-// Splash screen dismiss
 window.addEventListener('load', () => {
-  setTimeout(() => {
-    const s = document.getElementById('splashScreen');
-    if (s) {
-      s.classList.add('fade');
-      setTimeout(() => s.remove(), 700);
-    }
-  }, 1800);
-
   // Service Worker registration
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
       .then(() => console.log('SW registered'))
       .catch(e => console.log('SW error:', e));
   }
+
+  // Dismiss splash then show mic modal (if not already granted)
+  setTimeout(() => {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+      splash.classList.add('fade');
+      setTimeout(() => {
+        splash.remove();
+        // Check if permission already granted or denied previously
+        if (navigator.permissions) {
+          navigator.permissions.query({ name: 'microphone' }).then(result => {
+            if (result.state === 'granted') {
+              // Already allowed — activate silently
+              toggleMic();
+            } else if (result.state === 'denied') {
+              // Already denied — show denied state in button, skip modal
+              updateMicBtnDenied();
+            } else {
+              // 'prompt' — show our friendly modal
+              showMicModal();
+            }
+          }).catch(() => {
+            // Permissions API not supported — show modal anyway
+            showMicModal();
+          });
+        } else {
+          showMicModal();
+        }
+      }, 600);
+    }
+  }, 1800);
 });
+
+function showMicModal() {
+  const modal = document.getElementById('micModal');
+  if (modal) {
+    modal.classList.add('show');
+  }
+}
+
+function hideMicModal() {
+  const modal = document.getElementById('micModal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
+async function allowMic() {
+  hideMicModal();
+  await toggleMic();
+}
+
+function skipMic() {
+  hideMicModal();
+  showToast('💡 Toque no botão 🎙 no topo para ativar depois');
+}
+
+function updateMicBtnDenied() {
+  const btn = document.getElementById('micBtn');
+  const label = document.getElementById('micLabel');
+  if (btn) btn.classList.add('denied');
+  if (label) label.textContent = 'Bloqueado';
+  // Override click to guide user to settings
+  if (btn) btn.onclick = () => showToast('⚙️ Vá em Configurações do navegador para permitir o microfone');
+}
 
 // Online / offline detection
 window.addEventListener('offline', () => {
