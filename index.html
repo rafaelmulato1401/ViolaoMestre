@@ -992,7 +992,157 @@
     .app { grid-template-columns: 1fr; }
     .sidebar, .right-panel { display: none; }
     header { padding: 16px 20px; }
-    .main { padding: 20px; }
+    .main { padding: 20px; padding-bottom: 100px; }
+  }
+
+  /* ── MOBILE BOTTOM NAV ───────────────────────────── */
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 500;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 24px var(--shadow);
+  }
+
+  /* Lesson drawer trigger bar */
+  .mobile-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .mobile-nav-current {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-nav-badge {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .mobile-nav-info { min-width: 0; }
+  .mobile-nav-label { font-size: 13px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mobile-nav-sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  .mobile-nav-open-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(160,104,32,0.12);
+    border: 1px solid var(--border-strong);
+    border-radius: 50px;
+    padding: 8px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .mobile-nav-open-btn:active { transform: scale(0.95); }
+
+  .mobile-nav-arrow {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+    display: inline-block;
+  }
+
+  .mobile-nav-open-btn.open .mobile-nav-arrow { transform: rotate(180deg); }
+
+  /* Lesson drawer */
+  .mobile-nav-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-nav-drawer.open {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .mobile-nav-drawer-inner {
+    padding: 8px 0 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .mobile-nav-section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 12px 20px 6px;
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+  }
+
+  .mobile-nav-item:active { background: rgba(160,104,32,0.08); }
+
+  .mobile-nav-item.active {
+    background: rgba(160,104,32,0.1);
+    border-left-color: var(--accent);
+  }
+
+  .mobile-nav-item.done .mobile-nav-item-num {
+    background: var(--green);
+    color: #fff;
+    border-color: var(--green);
+  }
+
+  .mobile-nav-item-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--fret);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .mobile-nav-item.active .mobile-nav-item-num {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  .mobile-nav-item-text {}
+  .mobile-nav-item-label { font-size: 14px; color: var(--text); }
+  .mobile-nav-item-sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+
+  .mobile-nav-divider { height: 1px; background: var(--border); margin: 8px 20px; }
+
+  @media (max-width: 900px) {
+    .mobile-nav { display: block; }
   }
 
   /* ── MOBILE PWA ───────────────────────────────── */
@@ -1368,6 +1518,102 @@
   </aside>
 </div>
 
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-nav" id="mobileNav">
+  <!-- Current lesson bar -->
+  <div class="mobile-nav-bar">
+    <div class="mobile-nav-current">
+      <div class="mobile-nav-badge" id="mobileNavBadge">1</div>
+      <div class="mobile-nav-info">
+        <div class="mobile-nav-label" id="mobileNavLabel">Conhecendo o Violão</div>
+        <div class="mobile-nav-sub" id="mobileNavSub">Módulo 1 — Fundamentos</div>
+      </div>
+    </div>
+    <button class="mobile-nav-open-btn" id="mobileNavBtn" onclick="toggleMobileNav()">
+      Lições <span class="mobile-nav-arrow">▲</span>
+    </button>
+  </div>
+
+  <!-- Expandable drawer -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer">
+    <div class="mobile-nav-drawer-inner">
+
+      <div class="mobile-nav-section-title">Módulo 1 — Fundamentos</div>
+
+      <div class="mobile-nav-item active" id="mnav0" onclick="goLessonMobile(0)">
+        <div class="mobile-nav-item-num">1</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Conhecendo o Violão</div>
+          <div class="mobile-nav-item-sub">Partes & anatomia</div>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item" id="mnav1" onclick="goLessonMobile(1)">
+        <div class="mobile-nav-item-num">2</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Afinação</div>
+          <div class="mobile-nav-item-sub">E A D G B E</div>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item" id="mnav2" onclick="goLessonMobile(2)">
+        <div class="mobile-nav-item-num">3</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Postura & Posição</div>
+          <div class="mobile-nav-item-sub">Mão direita e esquerda</div>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item" id="mnav3" onclick="goLessonMobile(3)">
+        <div class="mobile-nav-item-num">4</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Primeiros Acordes</div>
+          <div class="mobile-nav-item-sub">Em, Am, E, A</div>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item" id="mnav4" onclick="goLessonMobile(4)">
+        <div class="mobile-nav-item-num">5</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Acordes Maiores</div>
+          <div class="mobile-nav-item-sub">C, D, G, F</div>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item" id="mnav5" onclick="goLessonMobile(5)">
+        <div class="mobile-nav-item-num">6</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Ritmo Básico</div>
+          <div class="mobile-nav-item-sub">Batidas & marcação</div>
+        </div>
+      </div>
+
+      <div class="mobile-nav-divider"></div>
+      <div class="mobile-nav-section-title">Módulo 2 — Músicas</div>
+
+      <div class="mobile-nav-item" id="mnav6" onclick="goLessonMobile(6)">
+        <div class="mobile-nav-item-num">♪</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Escolher Música</div>
+          <div class="mobile-nav-item-sub">Catálogo com cifras</div>
+        </div>
+      </div>
+
+      <div class="mobile-nav-divider"></div>
+      <div class="mobile-nav-section-title">Módulo 3 — Guitar Hero</div>
+
+      <div class="mobile-nav-item" id="mnav7" onclick="goLessonMobile(7)">
+        <div class="mobile-nav-item-num">🎸</div>
+        <div class="mobile-nav-item-text">
+          <div class="mobile-nav-item-label">Guitar Hero</div>
+          <div class="mobile-nav-item-sub">Toque junto com cifra</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
 <!-- Credits Footer -->
 <footer class="credits-footer">
   <div class="credits-logo">Violão<span>Mestre</span></div>
@@ -1612,6 +1858,7 @@ function goLesson(idx) {
   });
   updateProgress();
   renderLesson();
+  syncMobileNav(idx);
 }
 
 function updateProgress() {
@@ -2774,6 +3021,72 @@ function updateTuner(freq) {
     if (el) el.classList.add('in-tune');
   }
 }
+
+// ─── MOBILE NAV ─────────────────────────────────────────────────
+
+const MOBILE_NAV_META = [
+  { label: 'Conhecendo o Violão', sub: 'Módulo 1 — Fundamentos', badge: '1' },
+  { label: 'Afinação',            sub: 'Módulo 1 — Fundamentos', badge: '2' },
+  { label: 'Postura & Posição',   sub: 'Módulo 1 — Fundamentos', badge: '3' },
+  { label: 'Primeiros Acordes',   sub: 'Módulo 1 — Fundamentos', badge: '4' },
+  { label: 'Acordes Maiores',     sub: 'Módulo 1 — Fundamentos', badge: '5' },
+  { label: 'Ritmo Básico',        sub: 'Módulo 1 — Fundamentos', badge: '6' },
+  { label: 'Escolher Música',     sub: 'Módulo 2 — Músicas',     badge: '♪' },
+  { label: 'Guitar Hero',         sub: 'Módulo 3 — Guitar Hero', badge: '🎸' },
+];
+
+function toggleMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const btn    = document.getElementById('mobileNavBtn');
+  if (!drawer || !btn) return;
+  const isOpen = drawer.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+}
+
+function closeMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const btn    = document.getElementById('mobileNavBtn');
+  if (drawer) drawer.classList.remove('open');
+  if (btn)    btn.classList.remove('open');
+}
+
+function goLessonMobile(idx) {
+  closeMobileNav();
+  goLesson(idx);
+  // Scroll content to top smoothly
+  const main = document.getElementById('mainContent');
+  if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function syncMobileNav(idx) {
+  const meta = MOBILE_NAV_META[idx];
+  if (!meta) return;
+
+  // Update bar info
+  const badge = document.getElementById('mobileNavBadge');
+  const label = document.getElementById('mobileNavLabel');
+  const sub   = document.getElementById('mobileNavSub');
+  if (badge) badge.textContent = meta.badge;
+  if (label) label.textContent = meta.label;
+  if (sub)   sub.textContent   = meta.sub;
+
+  // Update active item in drawer
+  document.querySelectorAll('.mobile-nav-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // Mark completed items
+  for (let i = 0; i < idx; i++) {
+    const el = document.getElementById(`mnav${i}`);
+    if (el) el.classList.add('done');
+  }
+}
+
+// Close drawer when tapping outside
+document.addEventListener('click', (e) => {
+  const nav = document.getElementById('mobileNav');
+  if (nav && !nav.contains(e.target)) closeMobileNav();
+});
 
 // ─── THEME ──────────────────────────────────────────────────────
 function toggleTheme() {
